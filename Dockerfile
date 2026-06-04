@@ -6,7 +6,11 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-COPY projects.txt scripts/ ./scripts/
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY projects.txt .
+COPY scripts ./scripts
 
 RUN python3 scripts/mirror.py
 RUN python3 scripts/build-index.py
