@@ -1,0 +1,129 @@
+# projects.yml
+# ─────────────────────────────────────────────────────────────────────────────
+# Converted from projects.txt. Each entry has a `type` field that tells
+# scripts/mirror.py which download strategy to use.
+#
+# Types:
+#   rtd        — Read the Docs hosted. Downloads htmlzip via RTD CDN.
+#                Fields: slug, version (default: stable), formats (default: [htmlzip])
+#
+#   git-mkdocs — Docs in a GitHub repo built with MkDocs.
+#                Fields: slug, repo, branch (default: main),
+#                        config (default: mkdocs.yml), subdir (optional)
+#
+#   git-hugo   — Docs in a GitHub repo built with Hugo.
+#                Fields: slug, repo, branch (default: main),
+#                        hugo_version (default: latest), subdir (optional)
+#
+#   git-nextjs — Docs in a GitHub repo built with Next.js (static export).
+#                Fields: slug, repo, branch, build_cmd, out_dir (default: out)
+#
+#   wget       — Last resort for closed-source or non-buildable sites.
+#                Fields: slug, url, depth (default: 5)
+#
+# How to determine the type for a new project — run detect-doc-type.sh (Linux)
+# or detect-doc-type.ps1 (Windows) from the scripts/ directory.
+# ─────────────────────────────────────────────────────────────────────────────
+
+sources:
+
+  # ── Originally: "sphinx" in projects.txt ──────────────────────────────────
+  # sphinx-doc/sphinx uses Sphinx itself + conf.py, hosted on RTD.
+  # htmlzip available at: https://sphinx.readthedocs.io/_/downloads/en/stable/htmlzip/
+  - type: rtd
+    slug: sphinx
+    version: stable
+    formats: [htmlzip, pdf]
+
+  # ── Originally: "flask" in projects.txt ───────────────────────────────────
+  # pallets/flask uses pallets_sphinx_themes (Sphinx), hosted on RTD.
+  # htmlzip available at: https://flask.readthedocs.io/_/downloads/en/stable/htmlzip/
+  - type: rtd
+    slug: flask
+    version: stable
+    formats: [htmlzip, pdf]
+
+  # ── Originally: "fastapi" in projects.txt ─────────────────────────────────
+  # tiangolo/fastapi uses MkDocs (confirmed mkdocs.yml at docs/en/mkdocs.yml).
+  # Site: https://fastapi.tiangolo.com
+  # NOTE: fastapi IS also on RTD (slug: fastapi) but the canonical source build
+  # via MkDocs produces the exact site. Using git-mkdocs gives you the full
+  # site including JS search — use rtd as a simpler fallback if build fails.
+  - type: git-mkdocs
+    slug: fastapi
+    repo: https://github.com/tiangolo/fastapi
+    branch: master
+    config: docs/en/mkdocs.yml   # FastAPI keeps per-language mkdocs configs
+
+  # ── Originally: "requests" in projects.txt ────────────────────────────────
+  # psf/requests uses Sphinx (conf.py), hosted on RTD.
+  # htmlzip available at: https://requests.readthedocs.io/_/downloads/en/stable/htmlzip/
+  - type: rtd
+    slug: requests
+    version: stable
+    formats: [htmlzip]
+
+  # ── Originally: "https://pydantic-docs.helpmanual.io/" in projects.txt ────
+  # The old URL (helpmanual.io) is dead/403. Pydantic has moved to
+  # docs.pydantic.dev and is now built with MkDocs from pydantic/pydantic.
+  # Detected: mkdocs.yml present at repo root.
+  - type: git-mkdocs
+    slug: pydantic
+    repo: https://github.com/pydantic/pydantic
+    branch: main
+    config: mkdocs.yml
+
+  - type: git-hugo
+    slug: docker
+    repo: https://github.com/docker/docs
+    branch: main
+    hugo_version: "0.140.2"
+    copy_paths:
+      - build
+      - compose
+  
+  - type: git-hugo
+    slug: kubernetes
+    repo: https://github.com/kubernetes/website
+    branch: main
+    hugo_version: "0.144.2"   # pinned from netlify.toml
+    node_version: "20"         # Docsy theme requires npm ci first
+    pre_build: "npm ci"        # run before hugo
+    clone_flags: "--recurse-submodules --depth=1"
+    copy_paths:
+      - docs                   # main documentation
+      - reference              # API reference (built from submodule)
+  # ─────────────────────────────────────────────────────────────────────────
+  # Add new sources below. Run scripts/detect-doc-type.sh <url-or-slug>
+  # to determine the correct type before adding.
+  # ─────────────────────────────────────────────────────────────────────────
+
+  # Examples of other common types for reference (commented out):
+  # - type: git-hugo
+  #   slug: docker
+  #   repo: https://github.com/docker/docs
+  #   branch: main
+  #   hugo_version: "0.140.2"
+  #   # After Hugo builds to ./public/, only these subdirs are copied to output.
+  #   # Avoids pulling in desktop, scout, billing, engine, etc.
+  #   copy_paths:
+  #     - build
+  #     - compose
+  # type: git-hugo example — Docker docs
+  # - type: git-hugo
+  #   slug: docker
+  #   repo: https://github.com/docker/docs
+  #   branch: main
+  #   hugo_version: "0.140.2"
+
+  # type: rtd example — Ansible (large project, stable version)
+  # - type: rtd
+  #   slug: ansible
+  #   version: latest
+  #   formats: [htmlzip]
+
+  # type: wget example — closed-source site (last resort)
+  # - type: wget
+  #   slug: some-closed-docs
+  #   url: https://example.com/docs/
+  #   depth: 4
