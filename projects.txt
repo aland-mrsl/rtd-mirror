@@ -1,0 +1,6 @@
+sphinx
+flask
+fastapi
+requests
+celery
+https://pydantic-docs.helpmanual.io/
