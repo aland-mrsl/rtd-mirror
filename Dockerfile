@@ -15,8 +15,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY projects.yaml .          # ← renamed from projects.txt
 COPY scripts ./scripts
+COPY projects.yaml .          # ← renamed from projects.txt
 
 RUN python3 scripts/mirror.py
 RUN python3 scripts/build-index.py
