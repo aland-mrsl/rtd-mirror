@@ -16,7 +16,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY scripts ./scripts
-COPY projects.yaml .          # ← renamed from projects.txt
+RUN ls -lart
+COPY projects.yaml .
 
 RUN python3 scripts/mirror.py
 RUN python3 scripts/build-index.py
