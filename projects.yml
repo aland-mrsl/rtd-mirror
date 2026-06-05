@@ -28,40 +28,37 @@
 sources:
 
   # ── Originally: "sphinx" in projects.txt ──────────────────────────────────
-  # sphinx-doc/sphinx uses Sphinx itself + conf.py, hosted on RTD.
-  # htmlzip available at: https://sphinx.readthedocs.io/_/downloads/en/stable/htmlzip/
-  - type: rtd
+  # RTD htmlzip downloads are disabled for this project (404). Build from source.
+  - type: git-sphinx
     slug: sphinx
-    version: stable
-    formats: [htmlzip, pdf]
+    repo: https://github.com/sphinx-doc/sphinx
+    branch: master
+    doc_dir: doc
 
   # ── Originally: "flask" in projects.txt ───────────────────────────────────
-  # pallets/flask uses pallets_sphinx_themes (Sphinx), hosted on RTD.
-  # htmlzip available at: https://flask.readthedocs.io/_/downloads/en/stable/htmlzip/
-  - type: rtd
+  # Flask has moved hosting to flask.palletsprojects.com; RTD htmlzip disabled.
+  # Build from source using pallets-sphinx-themes (installed via pip install -e .[docs]).
+  - type: git-sphinx
     slug: flask
-    version: stable
-    formats: [htmlzip, pdf]
+    repo: https://github.com/pallets/flask
+    branch: main
+    doc_dir: docs
 
   # ── Originally: "fastapi" in projects.txt ─────────────────────────────────
-  # tiangolo/fastapi uses MkDocs (confirmed mkdocs.yml at docs/en/mkdocs.yml).
-  # Site: https://fastapi.tiangolo.com
-  # NOTE: fastapi IS also on RTD (slug: fastapi) but the canonical source build
-  # via MkDocs produces the exact site. Using git-mkdocs gives you the full
-  # site including JS search — use rtd as a simpler fallback if build fails.
-  - type: git-mkdocs
+  # MkDocs build requires private zensical.extensions.macros; RTD htmlzip also
+  # disabled. Scrape the published site as a fallback.
+  - type: wget
     slug: fastapi
-    repo: https://github.com/tiangolo/fastapi
-    branch: master
-    config: docs/en/mkdocs.yml   # FastAPI keeps per-language mkdocs configs
+    url: https://fastapi.tiangolo.com
+    depth: 2
 
   # ── Originally: "requests" in projects.txt ────────────────────────────────
-  # psf/requests uses Sphinx (conf.py), hosted on RTD.
-  # htmlzip available at: https://requests.readthedocs.io/_/downloads/en/stable/htmlzip/
-  - type: rtd
+  # RTD htmlzip downloads disabled. Build from source.
+  - type: git-sphinx
     slug: requests
-    version: stable
-    formats: [htmlzip]
+    repo: https://github.com/psf/requests
+    branch: main
+    doc_dir: docs
 
   # ── Originally: "https://pydantic-docs.helpmanual.io/" in projects.txt ────
   # The old URL (helpmanual.io) is dead/403. Pydantic has moved to
@@ -77,7 +74,8 @@ sources:
     slug: docker
     repo: https://github.com/docker/docs
     branch: main
-    hugo_version: "0.140.2"
+    hugo_version: "0.160.0"   # min 0.156.0; 0.160+ fixes template rendering issues
+    pre_build: "npm ci"        # installs JS deps (alpinejs, highlight.js, etc.)
     copy_paths:
       - build
       - compose

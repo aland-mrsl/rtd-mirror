@@ -1,9 +1,8 @@
-FROM python:3.12-slim AS builder
+FROM python:3.12-slim
 
 RUN apt-get update && \
     apt-get install -y wget unzip git curl ca-certificates && \
-    # Install Hugo extended binary (default version; per-source versions are
-    # fetched on demand by scripts/mirror.py)
+    # Install Hugo extended binary (default version; per-source versions are fetched on demand)
     HUGO_VER=0.140.2 && \
     curl -L "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VER}/hugo_extended_${HUGO_VER}_linux-amd64.tar.gz" \
       | tar xz -C /usr/local/bin hugo && \
@@ -12,16 +11,18 @@ RUN apt-get update && \
     apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY scripts ./scripts
-COPY projects.yml .
-
-RUN python3 scripts/mirror.py
-RUN python3 scripts/build-index.py
-
-FROM nginx:alpine
-COPY --from=builder /app/docs /usr/share/nginx/html
-EXPOSE 80
+RUN pip install --no-cache-dir \
+    requests>=2.32.0 \
+    pyyaml \
+    mkdocs \
+    mkdocs-material \
+    sphinx \
+    # Common Sphinx themes and extensions
+    furo \
+    sphinx-rtd-theme \
+    pallets-sphinx-themes \
+    sphinx-copybutton \
+    sphinx-tabs \
+    sphinx-issues \
+    myst-parser \
+    sphinxcontrib-websupport

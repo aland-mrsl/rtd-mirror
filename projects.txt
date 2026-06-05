@@ -1,8 +1,0 @@
-sphinx
-flask
-fastapi
-requests
-celery
-https://docs.docker.com/build
-https://docs.docker.com/compose/
-https://pydantic-docs.helpmanual.io/

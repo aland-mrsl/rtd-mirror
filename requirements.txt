@@ -1,2 +1,5 @@
 requests>=2.32.0
 pyyaml
+mkdocs
+mkdocs-material
+sphinx
