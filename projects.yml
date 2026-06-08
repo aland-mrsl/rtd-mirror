@@ -91,6 +91,12 @@ sources:
     copy_paths:
       - docs                   # main documentation
       - reference              # API reference (built from submodule)
+  - type: git-sphinx
+    slug: kopf
+    repo: https://github.com/nolar/kopf
+    branch: main
+    doc_dir: docs
+
   # ─────────────────────────────────────────────────────────────────────────
   # Add new sources below. Run scripts/detect-doc-type.sh <url-or-slug>
   # to determine the correct type before adding.

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Internal Docs</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #161618;
+      color: #d4d4d8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      padding: 2rem;
+    }
+
+    header {
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 1.25rem;
+      font-weight: 500;
+      color: #71717a;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+      width: 100%;
+      max-width: 680px;
+    }
+
+    .card {
+      background: #1e1e21;
+      border: 1px solid #2e2e33;
+      border-radius: 8px;
+      padding: 1.5rem;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .card:hover {
+      border-color: #52525b;
+      background: #26262b;
+    }
+
+    .card-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #52525b;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #e4e4e7;
+    }
+
+    .card-desc {
+      font-size: 0.8rem;
+      color: #71717a;
+      line-height: 1.5;
+    }
+
+    .card-arrow {
+      margin-top: auto;
+      padding-top: 1rem;
+      font-size: 0.8rem;
+      color: #52525b;
+    }
+
+    .k8s  .card-label { color: #3b82f6; }
+    .dock .card-label { color: #2196f3; }
+    .kopf .card-label { color: #10b981; }
+
+    footer {
+      font-size: 0.7rem;
+      color: #3f3f46;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Internal Documentation</h1>
+  </header>
+
+  <nav class="grid">
+    <a class="card k8s" href="http://kubernetes.docs.internal/">
+      <span class="card-label">Orchestration</span>
+      <span class="card-title">Kubernetes</span>
+      <span class="card-desc">Concepts, tasks, API reference, and tutorials for Kubernetes.</span>
+      <span class="card-arrow">kubernetes.docs.internal →</span>
+    </a>
+
+    <a class="card dock" href="http://docker-build.docs.internal/build/">
+      <span class="card-label">Build</span>
+      <span class="card-title">Docker Build + Bake</span>
+      <span class="card-desc">Docker Build architecture, Bake configuration, and buildx CLI reference.</span>
+      <span class="card-arrow">docker-build.docs.internal →</span>
+    </a>
+
+    <a class="card kopf" href="http://kopf.docs.internal/">
+      <span class="card-label">Operator Framework</span>
+      <span class="card-title">Kopf</span>
+      <span class="card-desc">Python framework for writing Kubernetes operators and controllers.</span>
+      <span class="card-arrow">kopf.docs.internal →</span>
+    </a>
+  </nav>
+
+  <footer>offline mirror — add more sites to this container as needed</footer>
+
+</body>
+</html>

@@ -1,0 +1,94 @@
+# syntax=docker/dockerfile:1
+#
+# Combined offline docs mirror — v2
+# Changes from v1:
+#   - Algolia DocSearch disabled in k8s Hugo build
+#   - Docsy offline Lunr search enabled instead (local JSON index, no external calls)
+#   - nginx sub_filter rewrites any residual kubernetes.io references in served files
+#   - baseURL set to internal hostname so Hugo absolute URLs point locally
+
+# ── Stage 1: Kubernetes docs (Hugo build) ─────────────────────────────────────
+FROM golang:1.22-bookworm AS k8s-builder
+
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs git \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG HUGO_VERSION=0.134.2
+RUN curl -fsSL \
+      "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.tar.gz" \
+    | tar -xzC /usr/local/bin hugo \
+    && hugo version
+
+ARG K8S_BRANCH=main
+RUN git clone --depth 1 --branch "${K8S_BRANCH}" \
+      https://github.com/kubernetes/website /site
+
+WORKDIR /site
+RUN git submodule update --init --recursive --depth 1
+RUN npm ci
+
+# ── Search config patch ────────────────────────────────────────────────────────
+# kubernetes/website uses Algolia DocSearch — an external cloud service.
+# In an airgap it can't function, and results link back to kubernetes.io.
+#
+# Docsy has a built-in Lunr.js offline search that builds a JSON index at
+# compile time and runs entirely client-side. We switch to that here by
+# patching the site's param config before Hugo runs.
+#
+# The config lives in config/_default/params.toml (or hugo.toml depending on
+# the repo version). We search for the keys rather than assuming the file path.
+RUN grep -rl "algolia_docsearch" /site/config/ | \
+      xargs sed -i \
+        -e 's/algolia_docsearch\s*=\s*true/algolia_docsearch = false/g' \
+        -e 's/offlineSearch\s*=\s*false/offlineSearch = true/g' \
+    && echo "Search config patched" \
+    || echo "Warning: algolia_docsearch key not found — check config manually"
+
+# Also disable the version-switcher dropdown — it links to kubernetes.io/docs/vX.Y/
+# The dropdown JS constructs absolute kubernetes.io URLs that no sub_filter can catch.
+RUN grep -rl "version_menu" /site/config/ 2>/dev/null | \
+      xargs sed -i 's/version_menu\s*=.*/version_menu = ""/g' || true
+
+# ── Hugo build ─────────────────────────────────────────────────────────────────
+# baseURL set to the internal hostname — Hugo uses this for canonical links,
+# the sitemap, and some theme components that emit absolute URLs.
+RUN hugo \
+      --baseURL "http://kubernetes.docs.internal/" \
+      --minify \
+      --logLevel warn \
+      -d /k8s-output
+
+# ── Stage 2: Docker Build + Bake docs (HTTrack scrape) ────────────────────────
+FROM ubuntu:24.04 AS docker-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        httrack \
+        ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN httrack \
+        "https://docs.docker.com/build/" \
+        "https://docs.docker.com/reference/cli/docker/buildx/" \
+        -O /scrape \
+        "+docs.docker.com/build/*" \
+        "+docs.docker.com/reference/cli/docker/buildx/*" \
+        "+docs.docker.com/_next/*" \
+        "-docs.docker.com/*" \
+        --robots=0 \
+        --sockets=6 \
+        --connection-per-second=8 \
+        --keep-alive \
+        --depth=10
+
+# ── Stage 3: nginx ─────────────────────────────────────────────────────────────
+FROM nginx:1.27-alpine
+
+RUN rm /etc/nginx/conf.d/default.conf
+
+COPY --from=k8s-builder    /k8s-output                  /usr/share/nginx/html/kubernetes
+COPY --from=docker-builder /scrape/docs.docker.com       /usr/share/nginx/html/docker-build
+COPY landing/index.html                                   /usr/share/nginx/html/landing/index.html
+COPY nginx.conf /etc/nginx/conf.d/docs.conf
+
+EXPOSE 80
