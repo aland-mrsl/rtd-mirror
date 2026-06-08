@@ -1,0 +1,44 @@
+variable "REGISTRY" { default = "duncanal" }
+
+# ── Shared base image (Python + Hugo + Node) ───────────────────────────────────
+# Used by Dockerfiles generated from projects.yml via scripts/generate-bake.py.
+target "base" {
+  dockerfile = "Dockerfile.base"
+  tags       = ["${REGISTRY}/rtd-mirror-base:latest"]
+}
+
+# ── Standalone doc builds ──────────────────────────────────────────────────────
+
+target "k8s" {
+  # Kubernetes docs (Hugo) + Docker Build/Bake docs (HTTrack)
+  dockerfile = "Dockerfile.k8"
+  tags       = ["rtd-k8:latest"]
+}
+
+target "kopf" {
+  # Kopf Python operator framework docs (Sphinx via uv)
+  # docs version: main
+  dockerfile = "Dockerfile.kopf"
+  tags       = ["rtd-kopf:latest"]
+}
+
+# ── Combined nginx image ───────────────────────────────────────────────────────
+# Assembles all standalone doc outputs into a single nginx container.
+# Depends on k8s and kopf; bake resolves them automatically via contexts.
+
+target "nginx" {
+  dockerfile = "Dockerfile.nginx"
+  tags       = [
+    "${REGISTRY}/rtd-mirror:latest",
+    "ghcr.io/aland-mrsl/rtd-mirror:latest",
+  ]
+  contexts   = {
+    "rtd-k8:latest"   = "target:k8s"
+    "rtd-kopf:latest" = "target:kopf"
+  }
+}
+
+# ── Groups ─────────────────────────────────────────────────────────────────────
+
+group "default" { targets = ["nginx"] }
+group "docs"    { targets = ["k8s", "kopf"] }

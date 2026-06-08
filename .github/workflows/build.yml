@@ -44,7 +44,6 @@ jobs:
         uses: docker/bake-action@v6
         with:
           targets: nginx
-          files: ./docker-bake.hcl
           push: true
           provenance: true
         env:
