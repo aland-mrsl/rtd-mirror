@@ -1,4 +1,7 @@
 variable "REGISTRY" { default = "duncanal" }
+variable "HUGO_VERSION" {
+  default = "0.144.2"
+}
 
 # ── Shared base image (Python + Hugo + Node) ───────────────────────────────────
 # Used by Dockerfiles generated from projects.yml via scripts/generate-bake.py.

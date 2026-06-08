@@ -8,25 +8,57 @@
 #   - baseURL set to internal hostname so Hugo absolute URLs point locally
 
 # ── Stage 1: Kubernetes docs (Hugo build) ─────────────────────────────────────
-FROM golang:1.22-bookworm AS k8s-builder
-
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
-    && apt-get install -y --no-install-recommends nodejs git \
-    && rm -rf /var/lib/apt/lists/*
+# Hugo binary source
+# ── Stage 1: Hugo binary (reliable install) ───────────────────────────────────
+FROM debian:bookworm-slim AS hugo
 
 ARG HUGO_VERSION=0.144.2
-RUN curl -fsSL \
-      "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.tar.gz" \
-    | tar -xzC /usr/local/bin hugo \
-    && hugo version
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL -o /tmp/hugo.tar.gz \
+    "https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_linux-amd64.tar.gz" \
+ && tar -xzf /tmp/hugo.tar.gz -C /usr/local/bin hugo \
+ && chmod +x /usr/local/bin/hugo \
+ && /usr/local/bin/hugo version \
+ && rm -f /tmp/hugo.tar.gz
+
+
+# ── Stage 2: Kubernetes docs build ───────────────────────────────────────────
+FROM node:20-bookworm AS k8s-builder
 
 ARG K8S_BRANCH=main
+
+# Core tooling (git already included in node image)
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+# Bring in Hugo
+COPY --from=hugo /usr/local/bin/hugo /usr/local/bin/hugo
+RUN hugo version
+
+# Clone Kubernetes docs
 RUN git clone --depth 1 --branch "${K8S_BRANCH}" \
       https://github.com/kubernetes/website /site
 
 WORKDIR /site
+
+# Ensure submodules are present (safer explicit step)
 RUN git submodule update --init --recursive --depth 1
-RUN npm ci
+
+# Node dependencies (cache-friendly pattern)
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
+
+# ── Hugo build ───────────────────────────────────────────────────────────────
+RUN hugo \
+      --baseURL "http://kubernetes.docs.internal/" \
+      --minify \
+      --logLevel warn \
+      -d /k8s-output
 
 # ── Search config patch ────────────────────────────────────────────────────────
 # kubernetes/website uses Algolia DocSearch — an external cloud service.
