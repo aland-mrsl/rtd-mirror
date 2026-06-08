@@ -19,8 +19,8 @@
 #   docker-build.docs.internal  → Docker Build + Bake docs
 #   kopf.docs.internal          → Kopf docs
 
-FROM rtd-k8:latest   AS k8s
-FROM rtd-kopf:latest AS kopf
+FROM k8s   AS k8s
+FROM kopf AS kopf
 
 FROM nginx:1.27-alpine
 

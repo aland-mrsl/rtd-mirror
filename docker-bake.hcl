@@ -33,8 +33,8 @@ target "nginx" {
     "ghcr.io/aland-mrsl/rtd-mirror:latest",
   ]
   contexts   = {
-    "rtd-k8:latest"   = "target:k8s"
-    "rtd-kopf:latest" = "target:kopf"
+    "k8s"   = "target:k8s"
+    "kopf" = "target:kopf"
   }
 }
 
