@@ -1,0 +1,103 @@
+# syntax=docker/dockerfile:1
+#
+# Offline Valkey documentation
+#   - Valkey website (Zola, 6 source repos)   → served at valkey.docs.internal
+#   - valkey-py API docs (Sphinx + Furo)       → served at valkey-py.docs.internal
+#
+# Via bake:
+#   docker buildx bake valkey
+#
+# Or manually:
+#   docker build -f Dockerfile.valkey -t rtd-valkey:latest .
+#   docker run --rm -p 80:80 rtd-valkey:latest
+
+# ── Stage 1: Zola binary ──────────────────────────────────────────────────────
+FROM debian:bookworm-slim AS zola
+
+ARG ZOLA_VERSION=0.22.0
+
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL -o /tmp/zola.tar.gz \
+    "https://github.com/getzola/zola/releases/download/v${ZOLA_VERSION}/zola-v${ZOLA_VERSION}-x86_64-unknown-linux-gnu.tar.gz" \
+ && tar -xzf /tmp/zola.tar.gz -C /usr/local/bin zola \
+ && chmod +x /usr/local/bin/zola \
+ && zola --version \
+ && rm /tmp/zola.tar.gz
+
+# ── Stage 2: Valkey website (Zola) ────────────────────────────────────────────
+# Mirrors the official CI layout exactly: all repos checked out side-by-side
+# under /build so the relative paths in the init scripts resolve correctly.
+FROM debian:bookworm-slim AS valkey-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git ca-certificates gawk \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY --from=zola /usr/local/bin/zola /usr/local/bin/zola
+
+WORKDIR /build
+
+RUN git clone --depth=1 https://github.com/valkey-io/valkey-io.github.io website
+RUN git clone --depth=1 https://github.com/valkey-io/valkey-doc          valkey-doc
+RUN git clone --depth=1 https://github.com/valkey-io/valkey               valkey
+RUN git clone --depth=1 https://github.com/valkey-io/valkey-bloom         valkey-bloom
+RUN git clone --depth=1 https://github.com/valkey-io/valkey-json          valkey-json
+RUN git clone --depth=1 https://github.com/valkey-io/valkey-search        valkey-search
+
+WORKDIR /build/website
+
+RUN ./build/init-topics-and-clients.sh \
+        ../valkey-doc/topics \
+        ../valkey-doc/clients
+
+RUN ./build/init-commands.sh \
+        ../valkey-doc/commands \
+        ../valkey/src/commands \
+        ../valkey-bloom/src/commands \
+        ../valkey-json/src/commands \
+        ../valkey-search/src/commands
+
+RUN zola build --base-url "http://valkey.docs.internal/"
+
+# ── Stage 3: valkey-py API docs (Sphinx + Furo) ───────────────────────────────
+FROM python:3.12-slim AS valkey-py-builder
+
+# pandoc is required by nbsphinx for notebook conversion
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git ca-certificates pandoc \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN git clone --depth=1 https://github.com/valkey-io/valkey-py /tmp/valkey-py
+
+WORKDIR /tmp/valkey-py
+
+RUN pip install --no-cache-dir sphinx nbsphinx sphinx_gallery furo -e ".[docs]"
+
+# Disable Furo Google Fonts (calls fonts.googleapis.com at runtime).
+# html_theme_options already exists in conf.py, so prepend the key into it.
+RUN python3 - <<'EOF'
+import pathlib
+p = pathlib.Path('docs/conf.py')
+t = p.read_text()
+t = t.replace(
+    'html_theme_options = {',
+    'html_theme_options = {\n    "font_css_urls": [],  # disable Google Fonts for offline use'
+)
+p.write_text(t)
+EOF
+
+RUN sphinx-build -b html docs /valkey-py-output
+
+# ── Stage 4: nginx ────────────────────────────────────────────────────────────
+FROM nginx:1.27-alpine
+
+RUN rm /etc/nginx/conf.d/default.conf
+
+COPY --from=valkey-builder    /build/website/public  /usr/share/nginx/html/valkey
+COPY --from=valkey-py-builder /valkey-py-output       /usr/share/nginx/html/valkey-py
+
+COPY nginx.conf /etc/nginx/conf.d/docs.conf
+
+EXPOSE 80

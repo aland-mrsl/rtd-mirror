@@ -25,9 +25,15 @@ target "kopf" {
   tags       = ["rtd-kopf:latest"]
 }
 
+target "valkey" {
+  # Valkey website (Zola, 6 source repos) + valkey-py API docs (Sphinx)
+  dockerfile = "Dockerfile.valkey"
+  tags       = ["rtd-valkey:latest"]
+}
+
 # ── Combined nginx image ───────────────────────────────────────────────────────
 # Assembles all standalone doc outputs into a single nginx container.
-# Depends on k8s and kopf; bake resolves them automatically via contexts.
+# Depends on k8s, kopf, and valkey; bake resolves them automatically via contexts.
 
 target "nginx" {
   dockerfile = "Dockerfile.nginx"
@@ -36,12 +42,13 @@ target "nginx" {
     "ghcr.io/aland-mrsl/rtd-mirror:latest",
   ]
   contexts   = {
-    "k8s"   = "target:k8s"
-    "kopf" = "target:kopf"
+    "k8s"    = "target:k8s"
+    "kopf"   = "target:kopf"
+    "valkey" = "target:valkey"
   }
 }
 
 # ── Groups ─────────────────────────────────────────────────────────────────────
 
 group "default" { targets = ["nginx"] }
-group "docs"    { targets = ["k8s", "kopf"] }
+group "docs"    { targets = ["k8s", "kopf", "valkey"] }

@@ -19,8 +19,9 @@
 #   docker-build.docs.internal  → Docker Build + Bake docs
 #   kopf.docs.internal          → Kopf docs
 
-FROM k8s   AS k8s
-FROM kopf AS kopf
+FROM k8s    AS k8s
+FROM kopf   AS kopf
+FROM valkey AS valkey
 
 FROM nginx:1.27-alpine
 
@@ -33,6 +34,10 @@ COPY --from=k8s  /usr/share/nginx/html/landing      /usr/share/nginx/html/landin
 
 # kopf image serves from root; mount it under /kopf for the shared nginx config
 COPY --from=kopf /usr/share/nginx/html              /usr/share/nginx/html/kopf
+
+# valkey image has both sites pre-placed at their subdirs
+COPY --from=valkey /usr/share/nginx/html/valkey    /usr/share/nginx/html/valkey
+COPY --from=valkey /usr/share/nginx/html/valkey-py /usr/share/nginx/html/valkey-py
 
 COPY nginx.conf /etc/nginx/conf.d/docs.conf
 

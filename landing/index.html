@@ -37,7 +37,7 @@
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 1rem;
       width: 100%;
-      max-width: 680px;
+      max-width: 860px;
     }
 
     .card {
@@ -85,9 +85,11 @@
       color: #52525b;
     }
 
-    .k8s  .card-label { color: #3b82f6; }
-    .dock .card-label { color: #2196f3; }
-    .kopf .card-label { color: #10b981; }
+    .k8s     .card-label { color: #3b82f6; }
+    .dock    .card-label { color: #2196f3; }
+    .kopf    .card-label { color: #10b981; }
+    .valkey  .card-label { color: #f97316; }
+    .valkeypy .card-label { color: #fb923c; }
 
     footer {
       font-size: 0.7rem;
@@ -121,6 +123,20 @@
       <span class="card-title">Kopf</span>
       <span class="card-desc">Python framework for writing Kubernetes operators and controllers.</span>
       <span class="card-arrow">kopf.docs.internal →</span>
+    </a>
+
+    <a class="card valkey" href="http://valkey.docs.internal/">
+      <span class="card-label">Data Store</span>
+      <span class="card-title">Valkey</span>
+      <span class="card-desc">Commands, topics, configuration, and client reference for the Valkey in-memory data store.</span>
+      <span class="card-arrow">valkey.docs.internal →</span>
+    </a>
+
+    <a class="card valkeypy" href="http://valkey-py.docs.internal/">
+      <span class="card-label">Python Client</span>
+      <span class="card-title">valkey-py</span>
+      <span class="card-desc">Python client API reference, connection management, clustering, and usage examples.</span>
+      <span class="card-arrow">valkey-py.docs.internal →</span>
     </a>
   </nav>
 

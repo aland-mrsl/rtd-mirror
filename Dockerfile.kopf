@@ -23,6 +23,18 @@ WORKDIR /tmp/kopf
 # exactly as .readthedocs.yaml does: uv sync --group docs
 RUN uv sync --group docs
 
+# Patch out external call sources before building:
+#   - sphinxcontrib.googleanalytics  → injects GA JS (calls googletagmanager.com at runtime)
+#   - googleanalytics_id             → the GA measurement ID (no-op without the extension, but cleaner to remove)
+#   - mypy intersphinx mapping       → sphinx-build fetches mypy.readthedocs.io/objects.inv at build time
+#   - font_css_urls []               → Furo loads Google Fonts by default; empty list disables that
+RUN sed -i \
+    -e "/'sphinxcontrib.googleanalytics'/d" \
+    -e '/googleanalytics_id/d' \
+    -e "/'mypy':/d" \
+    docs/conf.py \
+ && printf "\nhtml_theme_options = {'font_css_urls': []}\n" >> docs/conf.py
+
 RUN uv run sphinx-build -b html docs /build
 
 # ── Stage 2: Nginx ────────────────────────────────────────────────────────────
