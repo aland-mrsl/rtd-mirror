@@ -1,4 +1,5 @@
 variable "REGISTRY" { default = "duncanal" }
+variable "VERSION" { default = "dev" }
 variable "HUGO_VERSION" {
   default = "0.144.2"
 }
@@ -38,8 +39,8 @@ target "valkey" {
 target "nginx" {
   dockerfile = "Dockerfile.nginx"
   tags       = [
-    "${REGISTRY}/rtd-mirror:latest",
-    "ghcr.io/aland-mrsl/rtd-mirror:latest",
+    "${REGISTRY}/rtd-mirror:${VERSION}",
+    "ghcr.io/aland-mrsl/rtd-mirror:${VERSION}",
   ]
   contexts   = {
     "k8s"    = "target:k8s"

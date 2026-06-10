@@ -90,13 +90,31 @@ EOF
 
 RUN sphinx-build -b html docs /valkey-py-output
 
-# ── Stage 4: nginx ────────────────────────────────────────────────────────────
+# ── Stage 4: valkey-glide Python API docs (Sphinx + RTD theme) ───────────────
+# conf.py mocks the Rust extension (glide_shared._fast_response) via
+# autodoc_mock_imports, so no Rust toolchain or compiled wheels are needed.
+FROM python:3.12-slim AS valkey-glide-builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN git clone --depth=1 https://github.com/valkey-io/valkey-glide /tmp/valkey-glide
+
+WORKDIR /tmp/valkey-glide
+
+RUN pip install --no-cache-dir sphinx sphinx-rtd-theme
+
+RUN sphinx-build -b html python/docs /valkey-glide-output
+
+# ── Stage 5: nginx ────────────────────────────────────────────────────────────
 FROM nginx:1.27-alpine
 
 RUN rm /etc/nginx/conf.d/default.conf
 
-COPY --from=valkey-builder    /build/website/public  /usr/share/nginx/html/valkey
-COPY --from=valkey-py-builder /valkey-py-output       /usr/share/nginx/html/valkey-py
+COPY --from=valkey-builder       /build/website/public  /usr/share/nginx/html/valkey
+COPY --from=valkey-py-builder    /valkey-py-output       /usr/share/nginx/html/valkey-py
+COPY --from=valkey-glide-builder /valkey-glide-output    /usr/share/nginx/html/valkey-glide
 
 COPY nginx.conf /etc/nginx/conf.d/docs.conf
 
