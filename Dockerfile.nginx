@@ -1,23 +1,21 @@
 # syntax=docker/dockerfile:1
 #
-# Combined offline docs — assembles HTML output from the two standalone images
+# Combined offline docs — assembles HTML output from the standalone images
 # into a single nginx container using the shared nginx.conf for routing.
 #
 # Via bake (builds prerequisites automatically):
 #   docker buildx bake
 #
-# Or manually (build prerequisites first):
-#   docker build -f Dockerfile.k8   -t rtd-k8:latest   .
-#   docker build -f Dockerfile.kopf -t rtd-kopf:latest .
-#   docker build -f Dockerfile.nginx -t rtd-docs:latest .
-#
 # Run:
-#   docker run --rm -p 80:80 rtd-docs:latest
+#   docker run --rm -p 80:80 duncanal/rtd-mirror:latest
 # Then access via the internal hostnames (add to /etc/hosts or DNS):
 #   docs.internal               → landing page
 #   kubernetes.docs.internal    → Kubernetes docs
 #   docker-build.docs.internal  → Docker Build + Bake docs
 #   kopf.docs.internal          → Kopf docs
+#   valkey.docs.internal        → Valkey docs
+#   valkey-py.docs.internal     → valkey-py API docs
+#   valkey-glide.docs.internal  → valkey-glide Python API docs
 
 FROM k8s    AS k8s
 FROM kopf   AS kopf
@@ -38,6 +36,7 @@ COPY --from=kopf /usr/share/nginx/html              /usr/share/nginx/html/kopf
 # valkey image has both sites pre-placed at their subdirs
 COPY --from=valkey /usr/share/nginx/html/valkey    /usr/share/nginx/html/valkey
 COPY --from=valkey /usr/share/nginx/html/valkey-py /usr/share/nginx/html/valkey-py
+COPY --from=valkey /usr/share/nginx/html/valkey-glide /usr/share/nginx/html/valkey-glide
 
 COPY nginx.conf /etc/nginx/conf.d/docs.conf
 

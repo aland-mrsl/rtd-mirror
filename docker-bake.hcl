@@ -4,13 +4,6 @@ variable "HUGO_VERSION" {
   default = "0.144.2"
 }
 
-# ── Shared base image (Python + Hugo + Node) ───────────────────────────────────
-# Used by Dockerfiles generated from projects.yml via scripts/generate-bake.py.
-target "base" {
-  dockerfile = "Dockerfile.base"
-  tags       = ["${REGISTRY}/rtd-mirror-base:latest"]
-}
-
 # ── Standalone doc builds ──────────────────────────────────────────────────────
 
 target "k8s" {
@@ -27,7 +20,7 @@ target "kopf" {
 }
 
 target "valkey" {
-  # Valkey website (Zola, 6 source repos) + valkey-py API docs (Sphinx)
+  # Valkey website (Zola, 6 source repos) + valkey-py and valkey-glide API docs (Sphinx)
   dockerfile = "Dockerfile.valkey"
   tags       = ["rtd-valkey:latest"]
 }
@@ -40,7 +33,9 @@ target "nginx" {
   dockerfile = "Dockerfile.nginx"
   tags       = [
     "${REGISTRY}/rtd-mirror:${VERSION}",
+    "${REGISTRY}/rtd-mirror:latest",
     "ghcr.io/aland-mrsl/rtd-mirror:${VERSION}",
+    "ghcr.io/aland-mrsl/rtd-mirror:latest",
   ]
   contexts   = {
     "k8s"    = "target:k8s"
