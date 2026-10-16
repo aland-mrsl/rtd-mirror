@@ -18,6 +18,7 @@ the browser can reach them.
 | `kopf.docs.internal` | Kopf Python operator framework |
 | `valkey.docs.internal` | Valkey commands, topics, configuration, clients |
 | `valkey-py.docs.internal` | valkey-py Python client API reference |
+| `valkey-glide.docs.internal` | valkey-glide Python client API reference |
 
 ## /etc/hosts (single machine)
 
@@ -32,6 +33,7 @@ of the running container (`docker inspect` or `docker run --network host`):
 <CONTAINER_IP>  kopf.docs.internal
 <CONTAINER_IP>  valkey.docs.internal
 <CONTAINER_IP>  valkey-py.docs.internal
+<CONTAINER_IP>  valkey-glide.docs.internal
 ```
 
 **Linux / macOS:** `/etc/hosts`  
@@ -50,6 +52,7 @@ sudo tee -a /etc/hosts <<'EOF'
 127.0.0.1  kopf.docs.internal
 127.0.0.1  valkey.docs.internal
 127.0.0.1  valkey-py.docs.internal
+127.0.0.1  valkey-glide.docs.internal
 EOF
 ```
 
@@ -69,6 +72,7 @@ address=/docker-build.docs.internal/<CONTAINER_IP>
 address=/kopf.docs.internal/<CONTAINER_IP>
 address=/valkey.docs.internal/<CONTAINER_IP>
 address=/valkey-py.docs.internal/<CONTAINER_IP>
+address=/valkey-glide.docs.internal/<CONTAINER_IP>
 ```
 
 Or with a wildcard if you want all `*.docs.internal` subdomains to resolve to
@@ -89,6 +93,7 @@ docs.internal. {
         <CONTAINER_IP> kopf.docs.internal
         <CONTAINER_IP> valkey.docs.internal
         <CONTAINER_IP> valkey-py.docs.internal
+        <CONTAINER_IP> valkey-glide.docs.internal
         fallthrough
     }
     forward . /etc/resolv.conf
@@ -214,6 +219,7 @@ curl -s --resolve docker-build.docs.internal:8080:127.0.0.1 http://docker-build.
 curl -s --resolve kopf.docs.internal:8080:127.0.0.1         http://kopf.docs.internal:8080/         | head -5
 curl -s --resolve valkey.docs.internal:8080:127.0.0.1       http://valkey.docs.internal:8080/       | head -5
 curl -s --resolve valkey-py.docs.internal:8080:127.0.0.1    http://valkey-py.docs.internal:8080/    | head -5
+curl -s --resolve valkey-glide.docs.internal:8080:127.0.0.1 http://valkey-glide.docs.internal:8080/ | head -5
 ```
 
 `--resolve` injects a fake DNS entry just for that curl invocation — no files

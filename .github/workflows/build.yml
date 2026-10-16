@@ -49,6 +49,11 @@ jobs:
           targets: nginx
           push: true
           provenance: true
+          # Reuse layers across runs. Tool installs stay cached; source clones
+          # and everything after them refresh daily via CACHE_BUST (= VERSION).
+          set: |
+            *.cache-from=type=gha
+            *.cache-to=type=gha,mode=max
         env:
           REGISTRY: duncanal
           VERSION: ${{ env.VERSION }}
