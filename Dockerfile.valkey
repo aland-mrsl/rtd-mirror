@@ -39,6 +39,8 @@ COPY --from=zola /usr/local/bin/zola /usr/local/bin/zola
 
 WORKDIR /build
 
+# Set to the build date by bake so cached clones are refreshed daily
+ARG CACHE_BUST
 RUN git clone --depth=1 https://github.com/valkey-io/valkey-io.github.io website
 RUN git clone --depth=1 https://github.com/valkey-io/valkey-doc          valkey-doc
 RUN git clone --depth=1 https://github.com/valkey-io/valkey               valkey
@@ -69,6 +71,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         git ca-certificates pandoc \
  && rm -rf /var/lib/apt/lists/*
 
+# Set to the build date by bake so cached clones are refreshed daily
+ARG CACHE_BUST
 RUN git clone --depth=1 https://github.com/valkey-io/valkey-py /tmp/valkey-py
 
 WORKDIR /tmp/valkey-py
@@ -99,6 +103,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         git ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
+# Set to the build date by bake so cached clones are refreshed daily
+ARG CACHE_BUST
 RUN git clone --depth=1 https://github.com/valkey-io/valkey-glide /tmp/valkey-glide
 
 WORKDIR /tmp/valkey-glide

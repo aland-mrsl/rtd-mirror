@@ -9,6 +9,7 @@ variable "HUGO_VERSION" {
 target "k8s" {
   # Kubernetes docs (Hugo) + Docker Build/Bake docs (HTTrack)
   dockerfile = "Dockerfile.k8"
+  args       = { CACHE_BUST = VERSION }
   tags       = ["rtd-k8:latest"]
 }
 
@@ -16,12 +17,14 @@ target "kopf" {
   # Kopf Python operator framework docs (Sphinx via uv)
   # docs version: main
   dockerfile = "Dockerfile.kopf"
+  args       = { CACHE_BUST = VERSION }
   tags       = ["rtd-kopf:latest"]
 }
 
 target "valkey" {
   # Valkey website (Zola, 6 source repos) + valkey-py and valkey-glide API docs (Sphinx)
   dockerfile = "Dockerfile.valkey"
+  args       = { CACHE_BUST = VERSION }
   tags       = ["rtd-valkey:latest"]
 }
 

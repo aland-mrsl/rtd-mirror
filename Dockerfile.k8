@@ -7,8 +7,6 @@
 #   - nginx sub_filter rewrites any residual kubernetes.io references in served files
 #   - baseURL set to internal hostname so Hugo absolute URLs point locally
 
-# ── Stage 1: Kubernetes docs (Hugo build) ─────────────────────────────────────
-# Hugo binary source
 # ── Stage 1: Hugo binary (reliable install) ───────────────────────────────────
 FROM debian:bookworm-slim AS hugo
 
@@ -41,6 +39,8 @@ COPY --from=hugo /usr/local/bin/hugo /usr/local/bin/hugo
 RUN hugo version
 
 # Clone Kubernetes docs
+# Set to the build date by bake so cached clones are refreshed daily
+ARG CACHE_BUST
 RUN git clone --depth 1 --branch "${K8S_BRANCH}" \
       https://github.com/kubernetes/website /site
 
@@ -53,13 +53,6 @@ RUN git submodule update --init --recursive --depth 1
 RUN --mount=type=cache,target=/root/.npm \
     npm ci
 
-# ── Hugo build ───────────────────────────────────────────────────────────────
-RUN hugo \
-      --baseURL "http://kubernetes.docs.internal/" \
-      --minify \
-      --logLevel warn \
-      -d /k8s-output
-
 # ── Search config patch ────────────────────────────────────────────────────────
 # kubernetes/website uses Algolia DocSearch — an external cloud service.
 # In an airgap it can't function, and results link back to kubernetes.io.
@@ -70,7 +63,7 @@ RUN hugo \
 #
 # The config lives in config/_default/params.toml (or hugo.toml depending on
 # the repo version). We search for the keys rather than assuming the file path.
-RUN grep -rl "algolia_docsearch" /site/config/ | \
+RUN grep -rl "algolia_docsearch" /site/config/ /site/hugo.toml /site/config.toml 2>/dev/null | \
       xargs sed -i \
         -e 's/algolia_docsearch\s*=\s*true/algolia_docsearch = false/g' \
         -e 's/offlineSearch\s*=\s*false/offlineSearch = true/g' \
@@ -79,7 +72,7 @@ RUN grep -rl "algolia_docsearch" /site/config/ | \
 
 # Also disable the version-switcher dropdown — it links to kubernetes.io/docs/vX.Y/
 # The dropdown JS constructs absolute kubernetes.io URLs that no sub_filter can catch.
-RUN grep -rl "version_menu" /site/config/ 2>/dev/null | \
+RUN grep -rl "version_menu" /site/config/ /site/hugo.toml /site/config.toml 2>/dev/null | \
       xargs sed -i 's/version_menu\s*=.*/version_menu = ""/g' || true
 
 # ── Hugo build ─────────────────────────────────────────────────────────────────
@@ -91,7 +84,7 @@ RUN hugo \
       --logLevel warn \
       -d /k8s-output
 
-# ── Stage 2: Docker Build + Bake docs (HTTrack scrape) ────────────────────────
+# ── Stage 3: Docker Build + Bake docs (HTTrack scrape) ────────────────────────
 FROM ubuntu:24.04 AS docker-builder
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -99,6 +92,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+# Set to the build date by bake so cached clones are refreshed daily
+ARG CACHE_BUST
 RUN httrack \
         "https://docs.docker.com/build/" \
         "https://docs.docker.com/reference/cli/docker/buildx/" \
@@ -113,7 +108,7 @@ RUN httrack \
         --keep-alive \
         --depth=10
 
-# ── Stage 3: nginx ─────────────────────────────────────────────────────────────
+# ── Stage 4: nginx ─────────────────────────────────────────────────────────────
 FROM nginx:1.27-alpine
 
 RUN rm /etc/nginx/conf.d/default.conf

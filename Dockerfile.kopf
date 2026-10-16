@@ -14,6 +14,8 @@ RUN apt-get update && \
 RUN pip install --no-cache-dir uv
 
 ARG KOPF_BRANCH=main
+# Set to the build date by bake so cached clones are refreshed daily
+ARG CACHE_BUST
 RUN git clone --depth=1 --branch "${KOPF_BRANCH}" \
     https://github.com/nolar/kopf /tmp/kopf
 
@@ -48,6 +50,7 @@ RUN printf '%s\n' \
     '    server_name _;' \
     '    root /usr/share/nginx/html;' \
     '    index index.html;' \
+    '    absolute_redirect off;' \
     '    location / { try_files $uri $uri/ $uri.html $uri/index.html =404; }' \
     '    location ~* \.(css|js|woff2?|png|jpg|gif|ico|svg|webp)$ {' \
     '        expires 30d;' \
